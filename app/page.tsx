@@ -22,6 +22,7 @@ import { useUser } from '@/lib/hooks/use-user';
 import { Calendar } from '@/components/calendar/calendar';
 import { UpcomingEvents } from '@/components/calendar/events';
 import { getStacks } from '@/lib/db';
+import { InsightChart } from '@/components/insight-chart';
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
@@ -199,6 +200,11 @@ export default function Home() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {/* Add Insight Chart */}
+            <div className="mt-6">
+              <InsightChart />
+            </div>
           </div>
 
           {/* Sidebar */}
