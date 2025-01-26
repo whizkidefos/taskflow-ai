@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <rect width="1200" height="630" fill="url(#preview-gradient)"/>
+  
+  <!-- Logo -->
+  <g transform="translate(100, 165) scale(0.6)">
+    <circle cx="256" cy="256" r="256" fill="white" fill-opacity="0.1"/>
+    <path d="M256 128C238.33 128 224 142.33 224 160V352C224 369.67 238.33 384 256 384C273.67 384 288 369.67 288 352V160C288 142.33 273.67 128 256 128ZM256 176C264.84 176 272 183.16 272 192C272 200.84 264.84 208 256 208C247.16 208 240 200.84 240 192C240 183.16 247.16 176 256 176ZM256 304C247.16 304 240 296.84 240 288C240 279.16 247.16 272 256 272C264.84 272 272 279.16 272 288C272 296.84 264.84 304 256 304Z" fill="white"/>
+    <path d="M160 256H96M416 256H352M256 96V160M256 352V416" stroke="white" stroke-width="24" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="450" y="250" font-family="Inter, system-ui" font-size="72" font-weight="bold" fill="white">TaskFlow AI</text>
+  <text x="450" y="320" font-family="Inter, system-ui" font-size="32" fill="white" fill-opacity="0.8">Modern Task Management with AI</text>
+  
+  <!-- Feature List -->
+  <g transform="translate(450, 380)">
+    <text font-family="Inter, system-ui" font-size="24" fill="white" fill-opacity="0.9">
+      <tspan x="0" y="0">✨ Smart Task Organization</tspan>
+      <tspan x="0" y="40">🎯 Visual Progress Tracking</tspan>
+      <tspan x="300" y="0">📅 Calendar Integration</tspan>
+      <tspan x="300" y="40">🔄 Real-time Sync</tspan>
+    </text>
+  </g>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="preview-gradient" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" style="stop-color:#3B82F6"/>
+      <stop offset="100%" style="stop-color:#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg>
