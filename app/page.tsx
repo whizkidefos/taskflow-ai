@@ -19,21 +19,23 @@ import { TopJobs } from '@/components/top-jobs';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useUser } from '@/lib/hooks/use-user';
+import { useLoading } from '@/lib/hooks/use-loading';
 import { Calendar } from '@/components/calendar/calendar';
 import { UpcomingEvents } from '@/components/calendar/events';
 import { getStacks } from '@/lib/db';
 import { InsightChart } from '@/components/insight-chart';
 import { Logo } from '@/components/logo';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
+  const { isLoading, setIsLoading } = useLoading();
   const [authLoading, setAuthLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [stacks, setStacks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
   const fetchStacks = async () => {
     if (!user) return;
@@ -43,7 +45,7 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching stacks:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -51,41 +53,17 @@ export default function Home() {
     if (user) {
       fetchStacks();
     } else {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [user, fetchStacks]);
+  }, [user, fetchStacks, setIsLoading]);
 
-  const handleAuth = async () => {
-    try {
-      setAuthLoading(true);
-      let result;
-      
-      if (isSignUp) {
-        result = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (result.error) throw result.error;
-        toast.success('Check your email to confirm your account!');
-      } else {
-        result = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (result.error) throw result.error;
-        toast.success('Successfully signed in!');
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
+  // Show loading skeleton for the main app
+  if ((userLoading || isLoading) && user) {
+    return <LoadingSkeleton />;
+  }
 
-  if (userLoading || loading) {
+  // Show loading spinner for auth
+  if (userLoading && !user) {
     return (
       <div className="flex items-center justify-center min-h-[100vh]">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -126,7 +104,7 @@ export default function Home() {
               </div>
               <Button
                 className="w-full"
-                onClick={handleAuth}
+                onClick={() => handleAuth()}
                 disabled={authLoading || !email || !password}
               >
                 {authLoading ? (
@@ -164,6 +142,36 @@ export default function Home() {
       </div>
     );
   }
+
+  const handleAuth = async () => {
+    try {
+      setAuthLoading(true);
+      let result;
+      
+      if (isSignUp) {
+        result = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (result.error) throw result.error;
+        toast.success('Check your email to confirm your account!');
+      } else {
+        result = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (result.error) throw result.error;
+        toast.success('Successfully signed in!');
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
