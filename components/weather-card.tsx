@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Cloud, CloudRain, Sun, Loader2 } from 'lucide-react';
 
 interface WeatherData {
@@ -19,79 +18,70 @@ interface WeatherData {
 
 export function WeatherCard() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getWeather = async () => {
       try {
         // Get user's location
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 5000,
-            enableHighAccuracy: false
-          });
+          if (!navigator.geolocation) {
+            reject(new Error('Geolocation not supported'));
+            return;
+          }
+          
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            {
+              timeout: 10000,
+              enableHighAccuracy: false,
+              maximumAge: 300000 // 5 minutes
+            }
+          );
         });
 
         const { latitude, longitude } = position.coords;
-
-        // Fetch weather data from our API route
+        
+        // Fetch weather data
         const response = await fetch(
           `/api/weather?lat=${latitude}&lon=${longitude}`
         );
 
         if (!response.ok) {
-          throw new Error('Unable to fetch weather data');
+          const data = await response.json();
+          throw new Error(data.error || 'Weather service unavailable');
         }
 
         const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
-        setWeather({
-          main: {
-            temp: Math.round(data.main.temp),
-            humidity: data.main.humidity,
-          },
-          weather: data.weather,
-          name: data.name,
-        });
+        setWeather(data);
         setError(null);
       } catch (err: any) {
-        setError(err.message);
-        // Don't show toast for weather errors
         console.error('Weather error:', err);
+        if (err.code === 1) {
+          setError('Location access denied');
+        } else if (err.code === 2) {
+          setError('Location unavailable');
+        } else if (err.code === 3) {
+          setError('Location timeout');
+        } else {
+          setError(err.message || 'Weather unavailable');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     getWeather();
-  }, []); // Only run on mount
-
-  const WeatherIcon = () => {
-    if (!weather?.weather[0]?.main) return <Cloud className="h-6 w-6" />;
-    
-    switch (weather.weather[0].main.toLowerCase()) {
-      case 'clear':
-        return <Sun className="h-6 w-6" />;
-      case 'rain':
-        return <CloudRain className="h-6 w-6" />;
-      default:
-        return <Cloud className="h-6 w-6" />;
-    }
-  };
+  }, []);
 
   if (loading) {
     return (
       <Card className="p-4">
-        <div className="flex items-center space-x-4">
-          <Skeleton className="h-12 w-12 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-[100px]" />
-            <Skeleton className="h-4 w-[70px]" />
-          </div>
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">Loading weather...</span>
         </div>
       </Card>
     );
@@ -100,30 +90,43 @@ export function WeatherCard() {
   if (error) {
     return (
       <Card className="p-4">
-        <div className="text-sm text-muted-foreground">
-          Weather data unavailable
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Cloud className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              {error}
+            </span>
+          </div>
         </div>
       </Card>
     );
   }
 
-  if (!weather) return null;
+  if (!weather) {
+    return null;
+  }
+
+  const WeatherIcon = weather.weather[0].main.toLowerCase().includes('rain')
+    ? CloudRain
+    : weather.weather[0].main.toLowerCase().includes('cloud')
+    ? Cloud
+    : Sun;
 
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="text-primary">
-            <WeatherIcon />
-          </div>
-          <div>
-            <p className="font-medium">{weather.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {weather.weather[0]?.description}
-            </p>
-          </div>
+        <div className="flex items-center space-x-2">
+          <WeatherIcon className="h-5 w-5" />
+          <span className="font-medium">
+            {Math.round(weather.main.temp)}°C
+          </span>
         </div>
-        <p className="text-2xl font-bold">{weather.main.temp}°C</p>
+        <span className="text-sm text-muted-foreground">
+          {weather.name}
+        </span>
+      </div>
+      <div className="mt-2 text-sm text-muted-foreground">
+        {weather.weather[0].description}
       </div>
     </Card>
   );

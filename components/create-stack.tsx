@@ -43,16 +43,26 @@ export function CreateStack({ onStackCreated }: CreateStackProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleCreateStack();
+            if (e.key === 'Enter' && !loading && title.trim()) {
+              handleCreateStack();
+            }
           }}
         />
-        <Button onClick={handleCreateStack} disabled={loading || !title.trim()}>
+        <Button 
+          onClick={handleCreateStack} 
+          disabled={loading || !title.trim()}
+        >
           {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Creating...
+            </>
           ) : (
-            <PlusCircle className="h-4 w-4 mr-2" />
+            <>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Create Stack
+            </>
           )}
-          Create Stack
         </Button>
       </div>
     </Card>

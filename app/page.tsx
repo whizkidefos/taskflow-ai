@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BrainCircuit, CheckCircle2, ListTodo, PlusCircle, History } from 'lucide-react';
 import { TodoStack } from '@/components/todo-stack';
@@ -20,22 +19,22 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useUser } from '@/lib/hooks/use-user';
 import { useLoading } from '@/lib/hooks/use-loading';
+import { useInitialData } from '@/lib/hooks/use-initial-data';
 import { Calendar } from '@/components/calendar/calendar';
 import { UpcomingEvents } from '@/components/calendar/events';
-import { getStacks } from '@/lib/db';
 import { InsightChart } from '@/components/insight-chart';
 import { Logo } from '@/components/logo';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
-  const { isLoading, setIsLoading } = useLoading();
+  const { isLoading } = useLoading();
+  const { stacks, events, stats } = useInitialData();
   const [authLoading, setAuthLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [stacks, setStacks] = useState<any[]>([]);
 
   const handleAuth = async () => {
     try {
@@ -66,26 +65,6 @@ export default function Home() {
       setAuthLoading(false);
     }
   };
-
-  const fetchStacks = async () => {
-    if (!user) return;
-    try {
-      const data = await getStacks(user.id);
-      setStacks(data || []);
-    } catch (error) {
-      console.error('Error fetching stacks:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchStacks();
-    } else {
-      setIsLoading(false);
-    }
-  }, [user, fetchStacks, setIsLoading]);
 
   // Show loading skeleton for the main app
   if ((userLoading || isLoading) && user) {
@@ -176,98 +155,83 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto p-4">
-        <header className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <BrainCircuit className="h-8 w-8" />
-            <h1 className="text-2xl font-bold">TaskFlow AI</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              onClick={() => supabase.auth.signOut()}
-            >
-              Sign Out
-            </Button>
-          </div>
-        </header>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">TaskFlow AI</h1>
+          <ThemeToggle />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Main Content */}
           <div className="md:col-span-2 space-y-6">
-            <Tabs defaultValue="active" className="space-y-4">
+            <Tabs defaultValue="tasks" className="space-y-4">
               <TabsList>
-                <TabsTrigger value="active">
+                <TabsTrigger value="tasks">
                   <ListTodo className="h-4 w-4 mr-2" />
-                  Active
+                  Tasks
                 </TabsTrigger>
                 <TabsTrigger value="completed">
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                   Completed
                 </TabsTrigger>
-                <TabsTrigger value="history">
-                  <History className="h-4 w-4 mr-2" />
-                  History
+                <TabsTrigger value="insights">
+                  <BrainCircuit className="h-4 w-4 mr-2" />
+                  Insights
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="active" className="space-y-4">
-                <CreateStack onStackCreated={fetchStacks} />
-                <ScrollArea className="h-[calc(100vh-24rem)]">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {stacks.map((stack) => (
-                      <TodoStack
-                        key={stack.id}
-                        id={stack.id}
-                        title={stack.title}
-                        tasks={stack.tasks}
-                        onUpdate={fetchStacks}
-                      />
-                    ))}
-                  </div>
-                </ScrollArea>
+              <TabsContent value="tasks" className="space-y-4">
+                <CreateStack onStackCreated={() => {
+                  // Refresh the data
+                  window.location.reload();
+                }} />
+                <div className="space-y-4">
+                  {stacks.map((stack) => (
+                    <TodoStack
+                      key={stack.id}
+                      id={stack.id}
+                      title={stack.title}
+                      tasks={stack.tasks}
+                    />
+                  ))}
+                  {stacks.length === 0 && (
+                    <Card className="p-6">
+                      <div className="text-center text-muted-foreground">
+                        No stacks yet. Create one to get started!
+                      </div>
+                    </Card>
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="completed">
                 <CompletedStacks />
               </TabsContent>
 
-              <TabsContent value="history">
-                <Card className="p-4">
-                  <h2 className="text-lg font-semibold mb-4">Task History</h2>
-                  {/* Add task history component here */}
-                </Card>
+              <TabsContent value="insights">
+                <InsightsPanel />
+                <InsightChart initialData={stats} />
               </TabsContent>
             </Tabs>
-
-            {/* Add Insight Chart */}
-            <div className="mt-6">
-              <InsightChart />
-            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6 mb-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <WeatherCard />
-                <LiveClock />
-              </div>
-              <Card className="p-4">
-                <Calendar 
-                  mode="single"
-                  selected={selectedDate || undefined}
-                  onSelect={(date) => setSelectedDate(date || null)}
-                  className="w-full"
-                />
-              </Card>
-              <UpcomingEvents />
-            </div>
+          <div className="space-y-6">
+            <WeatherCard />
+            <Card className="p-4">
+              <LiveClock />
+            </Card>
+            <Card className="p-4">
+              <Calendar
+                mode="single"
+                selected={selectedDate || undefined}
+                onSelect={(day) => setSelectedDate(day || null)}
+                className="rounded-md"
+              />
+            </Card>
+            <UpcomingEvents initialEvents={events} />
+            <TopJobs />
           </div>
         </div>
-
-        <SiteFooter />
       </div>
+      <SiteFooter />
     </div>
   );
 }

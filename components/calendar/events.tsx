@@ -48,62 +48,45 @@ const eventTypeStyles: EventTypeStyles = {
   reminder: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
 };
 
-export function UpcomingEvents() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const { user } = useUser();
-  const [newEvent, setNewEvent] = useState({
+export function UpcomingEvents({ initialEvents = [] }: { initialEvents: Event[] }) {
+  const [events, setEvents] = useState<Event[]>(initialEvents);
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: '',
-    type: 'task' as Event['type'],
+    date: new Date().toISOString().split('T')[0],
+    type: 'task',
   });
-
-  const fetchEvents = async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const data = await getEvents(user.id);
-      setEvents(data);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      toast.error('Failed to load events');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user } = useUser();
 
   useEffect(() => {
-    if (user) {
-      fetchEvents();
-    }
-  }, [user, fetchEvents]);
+    setEvents(initialEvents);
+  }, [initialEvents]);
 
   const handleAddEvent = async () => {
-    if (!user) return;
+    if (!user || !newEvent.title || !newEvent.date || !newEvent.type) return;
+
     try {
-      await createEvent(
+      const result = await createEvent(
         user.id,
         newEvent.title,
         newEvent.date,
-        newEvent.type,
+        newEvent.type as 'task' | 'meeting' | 'reminder',
         newEvent.time || undefined
       );
-      
-      toast.success('Event created successfully');
-      
-      fetchEvents(); // Refresh the events list
-      setNewEvent({
-        title: '',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        time: '',
-        type: 'task',
-      });
-      setIsOpen(false);
+
+      if (result) {
+        setEvents([...events, result]);
+        setShowAddEvent(false);
+        setNewEvent({
+          title: '',
+          date: new Date().toISOString().split('T')[0],
+          type: 'task',
+        });
+        toast.success('Event added successfully');
+      }
     } catch (error) {
-      console.error('Error creating event:', error);
-      toast.error('Failed to create event');
+      console.error('Error adding event:', error);
+      toast.error('Failed to add event');
     }
   };
 
@@ -111,7 +94,7 @@ export function UpcomingEvents() {
     <Card className="p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Upcoming Events</h3>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={showAddEvent} onOpenChange={setShowAddEvent}>
           <DialogTrigger asChild>
             <Button variant="ghost" size="icon">
               <Plus className="h-5 w-5" />
@@ -167,7 +150,7 @@ export function UpcomingEvents() {
                 <Input
                   id="time"
                   type="time"
-                  value={newEvent.time}
+                  value={newEvent.time || ''}
                   onChange={(e) =>
                     setNewEvent((prev) => ({ ...prev, time: e.target.value }))
                   }
@@ -176,7 +159,7 @@ export function UpcomingEvents() {
               <Button
                 className="w-full"
                 onClick={handleAddEvent}
-                disabled={!newEvent.title || !user}
+                disabled={!newEvent.title || !newEvent.date || !newEvent.type}
               >
                 Add Event
               </Button>
@@ -185,11 +168,7 @@ export function UpcomingEvents() {
         </Dialog>
       </div>
       <ScrollArea className="h-[300px] pr-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <span className="text-muted-foreground">Loading events...</span>
-          </div>
-        ) : events.length === 0 ? (
+        {events.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <span className="text-muted-foreground">No upcoming events</span>
           </div>
