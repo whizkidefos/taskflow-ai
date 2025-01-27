@@ -37,6 +37,36 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [stacks, setStacks] = useState<any[]>([]);
 
+  const handleAuth = async () => {
+    try {
+      setAuthLoading(true);
+      let result;
+      
+      if (isSignUp) {
+        result = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (result.error) throw result.error;
+        toast.success('Check your email to confirm your account!');
+      } else {
+        result = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (result.error) throw result.error;
+        toast.success('Successfully signed in!');
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const fetchStacks = async () => {
     if (!user) return;
     try {
@@ -104,7 +134,7 @@ export default function Home() {
               </div>
               <Button
                 className="w-full"
-                onClick={() => handleAuth()}
+                onClick={handleAuth}
                 disabled={authLoading || !email || !password}
               >
                 {authLoading ? (
@@ -142,36 +172,6 @@ export default function Home() {
       </div>
     );
   }
-
-  const handleAuth = async () => {
-    try {
-      setAuthLoading(true);
-      let result;
-      
-      if (isSignUp) {
-        result = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (result.error) throw result.error;
-        toast.success('Check your email to confirm your account!');
-      } else {
-        result = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (result.error) throw result.error;
-        toast.success('Successfully signed in!');
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen">
