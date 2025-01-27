@@ -27,15 +27,10 @@ export function TodoStack({ id, title = 'New Stack', tasks: initialTasks = [], o
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
-
   const fetchTasks = async () => {
     if (!id) return;
-    
-    setLoading(true);
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -43,7 +38,6 @@ export function TodoStack({ id, title = 'New Stack', tasks: initialTasks = [], o
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-
       setTasks(data.map(task => ({
         id: task.id,
         title: task.title,
@@ -56,6 +50,10 @@ export function TodoStack({ id, title = 'New Stack', tasks: initialTasks = [], o
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchTasks();
+  }, [id, fetchTasks]);
 
   const handleAddTask = async () => {
     if (!newTaskTitle.trim() || !id) return;

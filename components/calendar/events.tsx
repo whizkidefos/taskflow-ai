@@ -50,7 +50,7 @@ const eventTypeStyles: EventTypeStyles = {
 
 export function UpcomingEvents() {
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useUser();
   const [newEvent, setNewEvent] = useState({
@@ -63,6 +63,7 @@ export function UpcomingEvents() {
   const fetchEvents = async () => {
     if (!user) return;
     try {
+      setLoading(true);
       const data = await getEvents(user.id);
       setEvents(data);
     } catch (error) {
@@ -74,8 +75,10 @@ export function UpcomingEvents() {
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    if (user) {
+      fetchEvents();
+    }
+  }, [user, fetchEvents]);
 
   const handleAddEvent = async () => {
     if (!user) return;

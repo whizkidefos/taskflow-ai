@@ -106,6 +106,12 @@ export function InsightChart() {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      fetchTaskStats();
+    }
+  }, [user, timeRange, fetchTaskStats]);
+
   if (loading) {
     return (
       <Card className="p-6">

@@ -25,16 +25,11 @@ export function CompletedStacks() {
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
 
-  useEffect(() => {
-    if (user) {
-      fetchCompletedStacks();
-    }
-  }, [user]);
-
   const fetchCompletedStacks = async () => {
     if (!user) return;
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('stacks')
         .select(`
@@ -60,6 +55,12 @@ export function CompletedStacks() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchCompletedStacks();
+    }
+  }, [user, fetchCompletedStacks]);
 
   useEffect(() => {
     fetchCompletedStacks();
