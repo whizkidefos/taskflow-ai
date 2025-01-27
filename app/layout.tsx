@@ -1,25 +1,17 @@
-import './globals.css';
+import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { Providers } from '@/components/providers';
+import './globals.css';
+import { Toaster } from 'sonner';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'TaskFlow AI',
-  description: 'Advanced AI-powered TODO application',
-  manifest: '/manifest.json',
-  icons: [
-    { rel: 'icon', url: '/favicon.ico' },
-    { rel: 'apple-touch-icon', url: '/icon-192x192.png' }
-  ]
-};
-
-export const viewport = {
-  themeColor: '#000000',
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  description: 'Intelligent task management powered by AI',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -29,17 +21,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-        <meta name="apple-mobile-web-app-title" content="TaskFlow AI" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
-      </head>
-      <body className={inter.className} suppressHydrationWarning>
-        <Providers>
+      <head />
+      <body className={inter.className}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
-        </Providers>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

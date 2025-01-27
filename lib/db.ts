@@ -21,28 +21,59 @@ export async function createStack(userId: string, title: string) {
 }
 
 export async function getStacks(userId: string) {
-  const { data, error } = await supabase
-    .from('stacks')
-    .select(`
-      *,
-      tasks (*)
-    `)
-    .eq('user_id', userId)
-    .is('archived_at', null)
-    .order('created_at', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('stacks')
+      .select(`
+        *,
+        tasks (
+          id,
+          title,
+          completed_at,
+          created_at
+        )
+      `)
+      .eq('user_id', userId)
+      .is('completed_at', null)
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Supabase error:', error);
-    throw error;
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error in getStacks:', error);
+    return [];
   }
-  return data;
+}
+
+export async function getCompletedStacks(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('stacks')
+      .select(`
+        *,
+        tasks (
+          id,
+          title,
+          completed_at,
+          created_at
+        )
+      `)
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null)
+      .order('completed_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error in getCompletedStacks:', error);
+    return [];
+  }
 }
 
 export async function archiveStack(stackId: string) {
   const { error } = await supabase
     .from('stacks')
     .update({
-      archived_at: new Date().toISOString(),
       completed_at: new Date().toISOString()
     })
     .eq('id', stackId);
@@ -122,18 +153,19 @@ export async function createEvent(
 }
 
 export async function getEvents(userId: string) {
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('user_id', userId)
-    .is('completed_at', null)
-    .order('date', { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: true });
 
-  if (error) {
-    console.error('Supabase error:', error);
-    throw error;
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error in getEvents:', error);
+    return [];
   }
-  return data;
 }
 
 export async function updateEvent(eventId: string, updates: Partial<Event>) {

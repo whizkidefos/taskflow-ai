@@ -23,25 +23,25 @@ import { Calendar } from '@/components/calendar/calendar';
 import { UpcomingEvents } from '@/components/calendar/events';
 import { getStacks } from '@/lib/db';
 import { InsightChart } from '@/components/insight-chart';
+import { Logo } from '@/components/logo';
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [stacks, setStacks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchStacks = async () => {
     if (!user) return;
-    
     try {
       const data = await getStacks(user.id);
       setStacks(data || []);
     } catch (error) {
       console.error('Error fetching stacks:', error);
-      toast.error('Failed to load stacks');
     } finally {
       setLoading(false);
     }
@@ -50,12 +50,14 @@ export default function Home() {
   useEffect(() => {
     if (user) {
       fetchStacks();
+    } else {
+      setLoading(false);
     }
   }, [user, fetchStacks]);
 
   const handleAuth = async () => {
     try {
-      setLoading(true);
+      setAuthLoading(true);
       let result;
       
       if (isSignUp) {
@@ -74,17 +76,18 @@ export default function Home() {
           password,
         });
         if (result.error) throw result.error;
+        toast.success('Successfully signed in!');
       }
     } catch (error: any) {
       toast.error(error.message);
     } finally {
-      setLoading(false);
+      setAuthLoading(false);
     }
   };
 
-  if (userLoading) {
+  if (userLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[100vh]">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
@@ -92,44 +95,72 @@ export default function Home() {
 
   if (!user) {
     return (
-      <div className="container max-w-lg mx-auto p-4 space-y-8">
-        <Card className="p-6 space-y-4">
-          <h1 className="text-2xl font-bold text-center">Welcome to TaskFlow AI</h1>
-          <p className="text-muted-foreground text-center">
-            {isSignUp ? 'Create an account to continue' : 'Sign in to continue'}
-          </p>
-          <div className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <Button
-              className="w-full"
-              onClick={handleAuth}
-              disabled={loading}
-            >
-              {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
-            </Button>
-            <div className="text-center">
-              <button
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                {isSignUp
-                  ? 'Already have an account? Sign in'
-                  : "Don't have an account? Sign up"}
-              </button>
-            </div>
+      <div className="flex items-center justify-center min-h-[100vh] bg-background">
+        <div className="w-full max-w-md p-4 space-y-8">
+          <div className="flex justify-center">
+            <Logo />
           </div>
-        </Card>
+          <Card className="p-8 space-y-6">
+            <div className="space-y-2 text-center">
+              <h1 className="text-2xl font-bold">Welcome Back</h1>
+              <p className="text-muted-foreground">
+                {isSignUp ? 'Create an account to get started' : 'Sign in to your account'}
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={handleAuth}
+                disabled={authLoading || !email || !password}
+              >
+                {authLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <span>{isSignUp ? 'Sign Up' : 'Sign In'}</span>
+                  </div>
+                ) : (
+                  isSignUp ? 'Sign Up' : 'Sign In'
+                )}
+              </Button>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setAuthLoading(false);
+              }}
+            >
+              {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+            </Button>
+          </Card>
+        </div>
       </div>
     );
   }

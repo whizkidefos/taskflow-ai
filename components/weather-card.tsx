@@ -27,7 +27,10 @@ export function WeatherCard() {
       try {
         // Get user's location
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 5000,
+            enableHighAccuracy: false
+          });
         });
 
         const { latitude, longitude } = position.coords;
@@ -38,11 +41,13 @@ export function WeatherCard() {
         );
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Weather data not available');
+          throw new Error('Unable to fetch weather data');
         }
 
         const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
 
         setWeather({
           main: {
@@ -52,8 +57,10 @@ export function WeatherCard() {
           weather: data.weather,
           name: data.name,
         });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch weather');
+        setError(null);
+      } catch (err: any) {
+        setError(err.message);
+        // Don't show toast for weather errors
         console.error('Weather error:', err);
       } finally {
         setLoading(false);
@@ -93,9 +100,8 @@ export function WeatherCard() {
   if (error) {
     return (
       <Card className="p-4">
-        <div className="flex items-center space-x-2 text-destructive">
-          <Cloud className="h-6 w-6" />
-          <p className="text-sm">Weather unavailable</p>
+        <div className="text-sm text-muted-foreground">
+          Weather data unavailable
         </div>
       </Card>
     );
