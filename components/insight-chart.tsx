@@ -31,12 +31,6 @@ export function InsightChart() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d'>('7d');
   const { user } = useUser();
 
-  useEffect(() => {
-    if (user) {
-      fetchTaskStats();
-    }
-  }, [user, timeRange]);
-
   const fetchTaskStats = async () => {
     if (!user) return;
 

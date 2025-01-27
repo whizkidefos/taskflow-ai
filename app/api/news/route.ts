@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
+    const apiKey = process.env.NEWS_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'News API key not configured' },
+        { status: 500 }
+      );
+    }
+
     const response = await fetch(
-      `https://newsapi.org/v2/top-headlines?country=us&category=technology&pageSize=10&apiKey=${process.env.NEWS_API_KEY}`
+      `https://newsapi.org/v2/top-headlines?country=us&apiKey=${apiKey}`
     );
 
     if (!response.ok) {
@@ -11,11 +21,6 @@ export async function GET() {
     }
 
     const data = await response.json();
-
-    if (data.status === 'error') {
-      throw new Error(data.message || 'News API error');
-    }
-
     return NextResponse.json(data);
   } catch (error) {
     console.error('News API error:', error);

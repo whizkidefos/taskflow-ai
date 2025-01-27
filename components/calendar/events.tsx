@@ -75,7 +75,7 @@ export function UpcomingEvents() {
 
   useEffect(() => {
     fetchEvents();
-  }, [user]);
+  }, [fetchEvents]);
 
   const handleAddEvent = async () => {
     if (!user) return;

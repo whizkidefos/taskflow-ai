@@ -28,10 +28,8 @@ export function TodoStack({ id, title = 'New Stack', tasks: initialTasks = [], o
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      fetchTasks();
-    }
-  }, [id]);
+    fetchTasks();
+  }, [fetchTasks]);
 
   const fetchTasks = async () => {
     if (!id) return;

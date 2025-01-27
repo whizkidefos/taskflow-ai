@@ -33,12 +33,6 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [stacks, setStacks] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      fetchStacks();
-    }
-  }, [user]);
-
   const fetchStacks = async () => {
     if (!user) return;
     
@@ -52,6 +46,12 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchStacks();
+    }
+  }, [user, fetchStacks]);
 
   const handleAuth = async () => {
     try {
