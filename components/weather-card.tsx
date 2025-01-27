@@ -2,15 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning, Wind, Loader2, CloudDrizzle, CloudFog } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Cloud, CloudRain, Sun, Loader2 } from 'lucide-react';
 
 interface WeatherData {
-  temp: number;
-  feels_like: number;
-  condition: string;
-  location: string;
-  humidity: number;
-  wind_speed: number;
+  main: {
+    temp: number;
+    humidity: number;
+  };
+  weather: Array<{
+    main: string;
+    description: string;
+  }>;
+  name: string;
 }
 
 export function WeatherCard() {
@@ -28,59 +32,59 @@ export function WeatherCard() {
 
         const { latitude, longitude } = position.coords;
 
-        // Fetch weather data from OpenWeatherMap API
+        // Fetch weather data from our API route
         const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`
+          `/api/weather?lat=${latitude}&lon=${longitude}`
         );
 
-        if (!response.ok) throw new Error('Weather data not available');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Weather data not available');
+        }
 
         const data = await response.json();
 
         setWeather({
-          temp: Math.round(data.main.temp),
-          feels_like: Math.round(data.main.feels_like),
-          condition: data.weather[0].main,
-          location: data.name,
-          humidity: data.main.humidity,
-          wind_speed: Math.round(data.wind.speed * 3.6) // Convert m/s to km/h
+          main: {
+            temp: Math.round(data.main.temp),
+            humidity: data.main.humidity,
+          },
+          weather: data.weather,
+          name: data.name,
         });
       } catch (err) {
-        setError('Could not fetch weather data');
-        console.error(err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch weather');
+        console.error('Weather error:', err);
       } finally {
         setLoading(false);
       }
     };
 
     getWeather();
-  }, []);
+  }, []); // Only run on mount
 
-  const getWeatherIcon = (condition: string) => {
-    switch (condition.toLowerCase()) {
+  const WeatherIcon = () => {
+    if (!weather?.weather[0]?.main) return <Cloud className="h-6 w-6" />;
+    
+    switch (weather.weather[0].main.toLowerCase()) {
       case 'clear':
-        return <Sun className="h-12 w-12 text-yellow-500" />;
+        return <Sun className="h-6 w-6" />;
       case 'rain':
-        return <CloudRain className="h-12 w-12 text-blue-500" />;
-      case 'drizzle':
-        return <CloudDrizzle className="h-12 w-12 text-blue-400" />;
-      case 'snow':
-        return <CloudSnow className="h-12 w-12 text-blue-200" />;
-      case 'thunderstorm':
-        return <CloudLightning className="h-12 w-12 text-yellow-600" />;
-      case 'mist':
-      case 'fog':
-        return <CloudFog className="h-12 w-12 text-gray-400" />;
+        return <CloudRain className="h-6 w-6" />;
       default:
-        return <Cloud className="h-12 w-12 text-gray-500" />;
+        return <Cloud className="h-6 w-6" />;
     }
   };
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <div className="flex items-center justify-center h-[120px]">
-          <Loader2 className="h-8 w-8 animate-spin" />
+      <Card className="p-4">
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-[100px]" />
+            <Skeleton className="h-4 w-[70px]" />
+          </div>
         </div>
       </Card>
     );
@@ -88,46 +92,32 @@ export function WeatherCard() {
 
   if (error) {
     return (
-      <Card className="p-6">
-        <div className="text-center text-destructive">
-          <p className="font-medium">{error}</p>
-          <p className="text-sm mt-1">Please enable location services and try again</p>
+      <Card className="p-4">
+        <div className="flex items-center space-x-2 text-destructive">
+          <Cloud className="h-6 w-6" />
+          <p className="text-sm">Weather unavailable</p>
         </div>
       </Card>
     );
   }
 
+  if (!weather) return null;
+
   return (
-    <Card className="p-6 transition-all hover:shadow-lg">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-medium text-muted-foreground mb-1">
-            {weather?.location}
-          </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-4xl font-bold">{weather?.temp}°C</span>
-            <div className="text-sm text-muted-foreground">
-              <p>Feels like {weather?.feels_like}°C</p>
-              <p>{weather?.condition}</p>
-            </div>
+    <Card className="p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="text-primary">
+            <WeatherIcon />
+          </div>
+          <div>
+            <p className="font-medium">{weather.name}</p>
+            <p className="text-sm text-muted-foreground">
+              {weather.weather[0]?.description}
+            </p>
           </div>
         </div>
-        {weather && getWeatherIcon(weather.condition)}
-      </div>
-      
-      <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t">
-        <div className="flex items-center gap-2">
-          <Wind className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            {weather?.wind_speed} km/h
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <CloudRain className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            {weather?.humidity}%
-          </span>
-        </div>
+        <p className="text-2xl font-bold">{weather.main.temp}°C</p>
       </div>
     </Card>
   );
