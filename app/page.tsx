@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BrainCircuit, CheckCircle2, ListTodo, PlusCircle, History } from 'lucide-react';
@@ -25,6 +25,8 @@ import { UpcomingEvents } from '@/components/calendar/events';
 import { InsightChart } from '@/components/insight-chart';
 import { Logo } from '@/components/logo';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { JobsBoard } from '@/components/jobs-board';
+import { HelpDialog } from '@/components/help-dialog';
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
@@ -66,6 +68,15 @@ export default function Home() {
     }
   };
 
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success('Successfully signed out!');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   // Show loading skeleton for the main app
   if ((userLoading || isLoading) && user) {
     return <LoadingSkeleton />;
@@ -82,8 +93,8 @@ export default function Home() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-[100vh] bg-background">
-        <div className="w-full max-w-md p-4 space-y-8">
+      <div className="flex items-center justify-center min-h-screen bg-background mx-4 md:mx-8 lg:mx-16">
+        <div className="w-full max-w-md p-4">
           <div className="flex justify-center">
             <Logo />
           </div>
@@ -154,83 +165,107 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto p-4 space-y-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">TaskFlow AI</h1>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Logo />
+          </div>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Button variant="outline" onClick={() => signOut()}>
+              Sign Out
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
-            <Tabs defaultValue="tasks" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="tasks">
-                  <ListTodo className="h-4 w-4 mr-2" />
-                  Tasks
-                </TabsTrigger>
-                <TabsTrigger value="completed">
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Completed
-                </TabsTrigger>
-                <TabsTrigger value="insights">
-                  <BrainCircuit className="h-4 w-4 mr-2" />
-                  Insights
-                </TabsTrigger>
-              </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 mt-4">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Task Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="tasks">
+                  <TabsList>
+                    <TabsTrigger value="tasks">
+                      <ListTodo className="h-4 w-4 mr-2" />
+                      Tasks
+                    </TabsTrigger>
+                    <TabsTrigger value="completed">
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Completed
+                    </TabsTrigger>
+                    <TabsTrigger value="insights">
+                      <BrainCircuit className="h-4 w-4 mr-2" />
+                      Insights
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="tasks" className="space-y-4">
-                <CreateStack onStackCreated={() => {
-                  // Refresh the data
-                  window.location.reload();
-                }} />
-                <div className="space-y-4">
-                  {stacks.map((stack) => (
-                    <TodoStack
-                      key={stack.id}
-                      id={stack.id}
-                      title={stack.title}
-                      tasks={stack.tasks}
-                    />
-                  ))}
-                  {stacks.length === 0 && (
-                    <Card className="p-6">
-                      <div className="text-center text-muted-foreground">
-                        No stacks yet. Create one to get started!
-                      </div>
-                    </Card>
-                  )}
-                </div>
-              </TabsContent>
+                  <TabsContent value="tasks" className="space-y-4">
+                    <CreateStack onStackCreated={() => {
+                      window.location.reload();
+                    }} />
+                    <div className="space-y-4">
+                      {stacks.map((stack) => (
+                        <TodoStack
+                          key={stack.id}
+                          id={stack.id}
+                          title={stack.title}
+                          tasks={stack.tasks}
+                        />
+                      ))}
+                    </div>
+                  </TabsContent>
 
-              <TabsContent value="completed">
-                <CompletedStacks />
-              </TabsContent>
+                  <TabsContent value="completed">
+                    <CompletedStacks />
+                  </TabsContent>
 
-              <TabsContent value="insights">
-                <InsightsPanel />
-                <InsightChart initialData={stats} />
-              </TabsContent>
-            </Tabs>
+                  <TabsContent value="insights">
+                    <InsightsPanel />
+                    <InsightChart initialData={stats} />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="space-y-6">
-            <WeatherCard />
-            <Card className="p-4">
-              <LiveClock />
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Calendar & Events</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <WeatherCard />
+                  <Card className="p-4">
+                    <LiveClock />
+                  </Card>
+                  <Card className="p-4">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate || undefined}
+                      onSelect={(day) => setSelectedDate(day || null)}
+                      className="rounded-md"
+                    />
+                  </Card>
+                  <UpcomingEvents initialEvents={events} />
+                </div>
+              </CardContent>
             </Card>
-            <Card className="p-4">
-              <Calendar
-                mode="single"
-                selected={selectedDate || undefined}
-                onSelect={(day) => setSelectedDate(day || null)}
-                className="rounded-md"
-              />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Opportunities</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <JobsBoard />
+              </CardContent>
             </Card>
-            <UpcomingEvents initialEvents={events} />
-            <TopJobs />
           </div>
         </div>
       </div>
+      <HelpDialog />
       <SiteFooter />
     </div>
   );

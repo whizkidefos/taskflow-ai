@@ -168,7 +168,7 @@ export async function getEvents(userId: string) {
   }
 }
 
-export async function updateEvent(eventId: string, updates: Partial<Event>) {
+export async function updateEvent(eventId: string, title: string, date: string, p0: string, p1: string | undefined, updates: Partial<Event>) {
   const { error } = await supabase
     .from('events')
     .update(updates)
