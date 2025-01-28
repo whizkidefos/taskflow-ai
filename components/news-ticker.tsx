@@ -87,7 +87,7 @@ export function NewsTicker() {
             className="hover:text-foreground transition-colors"
           >
             {news[currentNewsIndex].title}
-            <span className="ml-2 text-xs opacity-70">
+            <span className="ml-2 text-xs opacity-70 text-muted-foreground text-primary">
               - {news[currentNewsIndex].source.name}
             </span>
           </a>

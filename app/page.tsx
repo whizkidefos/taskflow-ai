@@ -27,6 +27,7 @@ import { Logo } from '@/components/logo';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { JobsBoard } from '@/components/jobs-board';
 import { HelpDialog } from '@/components/help-dialog';
+import { NewsTicker } from '@/components/news-ticker';
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
@@ -176,6 +177,10 @@ export default function Home() {
               Sign Out
             </Button>
           </div>
+        </div>
+
+        <div className="w-full">
+          <NewsTicker />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 mt-4">
