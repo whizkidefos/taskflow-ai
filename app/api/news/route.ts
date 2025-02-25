@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const apiKey = process.env.NEWS_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
         { error: 'News API key not configured' },
