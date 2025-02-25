@@ -20,8 +20,11 @@ import { Search, Tag, Calendar, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 type Task = Database['public']['Tables']['tasks']['Row'] & {
+  due_date: string | null;
   stack: { title: string };
   tags: { id: string; name: string; color: string }[];
+  priority: 'high' | 'medium' | 'low';
+  description: string | null;
 };
 
 interface SearchTasksProps {
