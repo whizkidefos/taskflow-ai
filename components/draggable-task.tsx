@@ -13,7 +13,12 @@ import { Database, TaskPriority } from '@/lib/database.types';
 import { TagManager } from './tag-manager';
 import { TaskMetadata } from './task-metadata';
 
-type Task = Database['public']['Tables']['tasks']['Row'];
+type Task = Database['public']['Tables']['tasks']['Row'] & {
+  description?: string | null;
+  tags?: Tag[] | null;
+  due_date?: string | null;
+  priority?: TaskPriority | null;
+};
 type Tag = Database['public']['Tables']['tags']['Row'];
 
 interface DraggableTaskProps {
@@ -195,8 +200,8 @@ export function DraggableTask({
             />
             <TaskMetadata
               dueDate={task.due_date ? new Date(task.due_date) : null}
-              priority={task.priority}
-              description={task.description}
+              priority={task.priority ?? 'low'}
+              description={task.description ?? null}
               onUpdate={handleUpdateMetadata}
             />
             <Button variant="ghost" size="sm" onClick={onEdit}>
