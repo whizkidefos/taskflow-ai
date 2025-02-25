@@ -1,9 +1,9 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import Viewport from 'next'
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { Viewport } from '@radix-ui/react-navigation-menu';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -15,14 +15,6 @@ export const metadata: Metadata = {
     { rel: 'icon', url: '/icon.svg' },
     { rel: 'apple-touch-icon', sizes: '180x180', url: '/apple-touch-icon.png' }
   ]
-};
-
-export const viewport: typeof Viewport = {
-  themeColor: '#000000',
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
