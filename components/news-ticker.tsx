@@ -34,28 +34,31 @@ export function NewsTicker() {
     const fetchNews = async () => {
       try {
         const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY;
-        if (!apiKey) return; // Silently use fallback news
+        if (!apiKey) return;
 
         const response = await fetch(
           `https://newsapi.org/v2/top-headlines?country=us&category=technology&pageSize=10&apiKey=${apiKey}`,
           {
             headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'TaskFlow AI/1.0'
+              'Accept': 'application/json'
             }
           }
         );
-        
-        if (!response.ok) return; // Silently use fallback news
-        
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch news');
+        }
+
         const data = await response.json();
-        
-        if (data.status === 'error' || !data.articles?.length) return; // Silently use fallback news
+
+        if (data.status === 'error' || !data.articles?.length) {
+          return;
+        }
 
         const formattedNews = data.articles
           .filter((article: any) => article.title && article.url)
           .map((article: any, index: number) => ({
-            id: index.toString(),
+            id: `news-${index}`,
             title: article.title,
             description: article.description || '',
             author: article.author || 'Unknown',
@@ -69,7 +72,6 @@ export function NewsTicker() {
         }
       } catch (error) {
         console.error('Error fetching news:', error);
-        // Silently continue with fallback news
       }
     };
 
@@ -89,10 +91,10 @@ export function NewsTicker() {
       <div className="flex items-center gap-2 px-4 py-2">
         <Newspaper className="h-4 w-4 flex-shrink-0 text-primary" />
         <ScrollArea className="w-full whitespace-nowrap">
-          <a 
+          <a
             href={currentNews.url}
             target="_blank"
-            rel="noopener noreferrer" 
+            rel="noopener noreferrer"
             className="text-sm hover:underline inline-flex items-center gap-2"
           >
             <span className="font-medium">{currentNews.title}</span>

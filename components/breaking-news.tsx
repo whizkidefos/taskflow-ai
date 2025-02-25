@@ -18,20 +18,21 @@ interface NewsArticle {
   url: string;
 }
 
-const FALLBACK_NEWS = Array(5).fill(null).map((_, index) => ({
-  id: `fallback-${index}`,
-  title: 'Welcome to TaskFlow AI - Your Personal Task Management Solution',
-  description: 'Stay organized and productive with our advanced features',
-  author: 'TaskFlow Team',
-  source: { name: 'TaskFlow AI' },
-  publishedAt: new Date().toISOString(),
-  url: '#'
-}));
+const FALLBACK_NEWS = [
+  {
+    id: '1',
+    title: 'Welcome to TaskFlow AI - Your Personal Task Management Solution',
+    description: 'Stay organized and productive with our advanced features',
+    author: 'TaskFlow Team',
+    source: { name: 'TaskFlow AI' },
+    publishedAt: new Date().toISOString(),
+    url: '#'
+  }
+];
 
 export function BreakingNews() {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -46,19 +47,17 @@ export function BreakingNews() {
           `https://newsapi.org/v2/top-headlines?country=us&category=technology&pageSize=5&apiKey=${apiKey}`,
           {
             headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'TaskFlow AI/1.0'
+              'Accept': 'application/json'
             }
           }
         );
-        
+
         if (!response.ok) {
-          setNews(FALLBACK_NEWS);
-          return;
+          throw new Error('Failed to fetch news');
         }
-        
+
         const data = await response.json();
-        
+
         if (data.status === 'error' || !data.articles?.length) {
           setNews(FALLBACK_NEWS);
           return;
@@ -67,7 +66,7 @@ export function BreakingNews() {
         const formattedNews = data.articles
           .filter((article: any) => article.title && article.url)
           .map((article: any, index: number) => ({
-            id: `news-${index}-${Date.now()}`,
+            id: `news-${index}`,
             title: article.title,
             description: article.description || '',
             author: article.author || 'Unknown',
@@ -76,11 +75,7 @@ export function BreakingNews() {
             url: article.url
           }));
 
-        if (formattedNews.length > 0) {
-          setNews(formattedNews);
-        } else {
-          setNews(FALLBACK_NEWS);
-        }
+        setNews(formattedNews.length > 0 ? formattedNews : FALLBACK_NEWS);
       } catch (error) {
         console.error('Error fetching news:', error);
         setNews(FALLBACK_NEWS);
