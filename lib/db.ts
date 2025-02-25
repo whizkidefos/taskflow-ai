@@ -4,9 +4,33 @@ export const db = createClient({
   url: process.env.NEXT_PUBLIC_DB_URL || 'file:local.db',
 });
 
+export interface Stack {
+  id: string;
+  title: string;
+  user_id: string;
+  created_at: string;
+  completed_at: string | null;
+  archived: boolean;
+}
+
 export interface CreateStackInput {
   title: string;
   userId: string;
+}
+
+export async function getStacks(userId: string): Promise<Stack[]> {
+  const result = await db.execute({
+    sql: `SELECT * FROM todo_stacks WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC`,
+    args: [userId]
+  });
+  return result.rows.map(row => ({
+    id: row.id,
+    title: row.title,
+    user_id: row.user_id,
+    created_at: row.created_at,
+    completed_at: row.completed_at,
+    archived: Boolean(row.archived)
+  })) as Stack[];
 }
 
 export async function createStack({ title, userId }: CreateStackInput) {
