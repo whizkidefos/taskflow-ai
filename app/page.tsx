@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BrainCircuit, CheckCircle2, ListTodo, PlusCircle, History, Mail, Github, Chrome, Book } from 'lucide-react';
+import { BrainCircuit, CheckCircle2, ListTodo, PlusCircle, History, Mail, Github, Chrome, Book, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TodoStack } from '@/components/todo-stack';
 import { InsightsPanel } from '@/components/insights-panel';
 import { CompletedStacks } from '@/components/completed-stacks';
