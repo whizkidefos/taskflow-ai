@@ -6,9 +6,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  ChevronLeft,
+  ChevronRight,
   Calendar as CalendarIcon,
   Clock,
   CalendarDays
@@ -144,24 +144,6 @@ export function CalendarView() {
               selected={date}
               onSelect={setDate}
               className="w-full"
-              classNames={{
-                months: "w-full",
-                month: "w-full",
-                table: "w-full border-collapse space-y-1",
-                head_row: "grid grid-cols-7 mb-1",
-                head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem] h-8 flex items-center justify-center",
-                row: "grid grid-cols-7 mt-2",
-                cell: "h-9 w-full relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md",
-                day: "h-9 w-9 p-0 mx-auto font-normal aria-selected:opacity-100 hover:bg-accent rounded-md",
-                day_range_end: "day-range-end",
-                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-md",
-                day_today: "bg-accent text-accent-foreground",
-                day_outside: "opacity-50 text-muted-foreground",
-                day_disabled: "opacity-50 cursor-not-allowed",
-                day_hidden: "invisible",
-                day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                day_range_start: "day-range-start",
-              }}
               modifiers={{
                 today: new Date(),
                 hasEvents: (date) => events.some(event => isSameDay(new Date(event.date), date)),
@@ -180,7 +162,7 @@ export function CalendarView() {
                 DayContent: ({ date }) => {
                   const dayEvents = getDayEvents(date);
                   return (
-                    <div className="relative w-9 h-9 flex items-center justify-center">
+                    <div className="relative w-full h-full flex items-center justify-center">
                       <span>{format(date, 'd')}</span>
                       {renderEventBadge(dayEvents.length)}
                     </div>
