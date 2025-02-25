@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { NewsTicker } from '@/components/news-ticker';
 
 export function SiteFooter() {
   const [mounted, setMounted] = useState(false);
@@ -23,7 +22,6 @@ export function SiteFooter() {
   return (
     <footer className="mt-auto border-t">
       <div className="container mx-auto py-4 space-y-4">
-        <NewsTicker />
         <div className="flex justify-between items-center text-sm text-muted-foreground">
           <p suppressHydrationWarning>{currentDate}</p>
           <p>TaskFlow AI &copy; {new Date().getFullYear()}</p>

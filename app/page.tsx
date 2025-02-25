@@ -320,8 +320,8 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <main className="flex-1 p-4 md:p-8">
-        <div className="mx-auto max-w-7xl">
-          <header className="mb-8">
+        <div className="mx-auto container">
+          <header className="mb-8 mt-8">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <svg className="h-8 w-8 text-primary" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
