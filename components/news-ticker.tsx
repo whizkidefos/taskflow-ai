@@ -34,19 +34,23 @@ export function NewsTicker() {
     const fetchNews = async () => {
       try {
         const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY;
-        if (!apiKey) return;
+        if (!apiKey) {
+          return;
+        }
 
         const response = await fetch(
           `https://newsapi.org/v2/top-headlines?country=us&category=technology&pageSize=10&apiKey=${apiKey}`,
           {
             headers: {
+              'X-Api-Key': apiKey,
               'Accept': 'application/json'
-            }
+            },
+            cache: 'no-cache'
           }
         );
 
         if (!response.ok) {
-          throw new Error('Failed to fetch news');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -59,7 +63,7 @@ export function NewsTicker() {
           .filter((article: any) => article.title && article.url)
           .map((article: any, index: number) => ({
             id: `news-${index}`,
-            title: article.title,
+            title: article.title.replace(/\[\+\d+ chars\]$/, '').trim(),
             description: article.description || '',
             author: article.author || 'Unknown',
             source: article.source || { name: 'Unknown' },
@@ -77,12 +81,17 @@ export function NewsTicker() {
 
     fetchNews();
 
-    const interval = setInterval(() => {
+    const newsInterval = setInterval(() => {
       setCurrentNewsIndex((prev) => (prev + 1) % news.length);
     }, 5000);
 
-    return () => clearInterval(interval);
-  }, []);
+    const fetchInterval = setInterval(fetchNews, 300000); // Refresh every 5 minutes
+
+    return () => {
+      clearInterval(newsInterval);
+      clearInterval(fetchInterval);
+    };
+  }, [news.length]);
 
   const currentNews = news[currentNewsIndex];
 

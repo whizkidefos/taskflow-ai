@@ -47,13 +47,15 @@ export function BreakingNews() {
           `https://newsapi.org/v2/top-headlines?country=us&category=technology&pageSize=5&apiKey=${apiKey}`,
           {
             headers: {
+              'X-Api-Key': apiKey,
               'Accept': 'application/json'
-            }
+            },
+            cache: 'no-cache'
           }
         );
 
         if (!response.ok) {
-          throw new Error('Failed to fetch news');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -67,7 +69,7 @@ export function BreakingNews() {
           .filter((article: any) => article.title && article.url)
           .map((article: any, index: number) => ({
             id: `news-${index}`,
-            title: article.title,
+            title: article.title.replace(/\[\+\d+ chars\]$/, '').trim(),
             description: article.description || '',
             author: article.author || 'Unknown',
             source: article.source || { name: 'Unknown' },
@@ -85,6 +87,10 @@ export function BreakingNews() {
     };
 
     fetchNews();
+
+    // Refresh news every 5 minutes
+    const interval = setInterval(fetchNews, 300000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
