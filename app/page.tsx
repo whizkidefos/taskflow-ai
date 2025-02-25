@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { User } from '@supabase/supabase-js';
 import { CalendarView } from '@/components/calendar-view';
+import { BreakingNews } from '@/components/breaking-news';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -449,7 +450,9 @@ export default function Home() {
               </div>
             </div>
           </header>
+          <BreakingNews />
         </div>
+        
       </main>
       <SiteFooter />
     </div>
