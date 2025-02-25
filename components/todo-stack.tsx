@@ -1,193 +1,316 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { PlusCircle, Archive, Loader2 } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { PlusCircle, Archive, Loader2, Trash2, Flag } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-interface Task {
+interface TodoItem {
   id: string;
-  title: string;
+  text: string;
   completed: boolean;
+  category?: string;
+  priority?: 'low' | 'medium' | 'high';
 }
 
 interface TodoStackProps {
-  id?: string;
-  title?: string;
-  tasks?: Task[];
-  onUpdate?: () => void;
+  id: string;
+  title: string;
+  items: TodoItem[];
+  onUpdate: () => void;
+  archived?: boolean;
 }
 
-export function TodoStack({ id, title = 'New Stack', tasks: initialTasks = [], onUpdate }: TodoStackProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
+const CATEGORIES = [
+  'Work',
+  'Personal',
+  'Shopping',
+  'Health',
+  'Finance',
+  'Home',
+  'Other'
+];
+
+const PRIORITIES = [
+  { value: 'low', label: 'Low', color: 'text-blue-500' },
+  { value: 'medium', label: 'Medium', color: 'text-yellow-500' },
+  { value: 'high', label: 'High', color: 'text-red-500' }
+];
+
+export function TodoStack({ id, title, items: initialItems, onUpdate, archived = false }: TodoStackProps) {
+  const [items, setItems] = useState(initialItems);
+  const [newItemText, setNewItemText] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState<string>('');
+  const [newItemPriority, setNewItemPriority] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [addingTask, setAddingTask] = useState(false);
 
-  const fetchTasks = async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('stack_id', id)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setTasks(data.map(task => ({
-        id: task.id,
-        title: task.title,
-        completed: task.completed_at !== null
-      })));
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      toast.error('Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, [id]);
-
-  const handleAddTask = async () => {
-    if (!newTaskTitle.trim() || !id || addingTask) return;
+  const handleAddItem = async () => {
+    if (!newItemText.trim()) return;
     
-    setAddingTask(true);
+    setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('tasks')
-        .insert([{ stack_id: id, title: newTaskTitle.trim() }])
+        .from('todo_items')
+        .insert([
+          { 
+            stack_id: id, 
+            text: newItemText.trim(),
+            category: newItemCategory || null,
+            priority: newItemPriority || null
+          }
+        ])
         .select()
         .single();
 
       if (error) throw error;
 
-      setTasks([...tasks, {
+      setItems([...items, {
         id: data.id,
-        title: data.title,
-        completed: false
+        text: data.text,
+        completed: data.completed,
+        category: data.category,
+        priority: data.priority
       }]);
-      setNewTaskTitle('');
-      toast.success('Task added successfully');
-      if (onUpdate) onUpdate();
+      setNewItemText('');
+      setNewItemCategory('');
+      setNewItemPriority('');
+      toast.success('Item added successfully');
     } catch (error) {
-      console.error('Error adding task:', error);
-      toast.error('Failed to add task');
+      console.error('Error adding item:', error);
+      toast.error('Failed to add item');
     } finally {
-      setAddingTask(false);
+      setLoading(false);
     }
   };
 
-  const handleToggleTask = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task || !id) return;
+  const handleToggleItem = async (itemId: string) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
 
     try {
       const { error } = await supabase
-        .from('tasks')
+        .from('todo_items')
         .update({ 
-          completed_at: task.completed ? null : new Date().toISOString()
+          completed: !item.completed,
+          completed_at: !item.completed ? new Date().toISOString() : null
         })
-        .eq('id', taskId);
+        .eq('id', itemId);
 
       if (error) throw error;
 
-      setTasks(tasks.map(t =>
-        t.id === taskId ? { ...t, completed: !t.completed } : t
+      setItems(items.map(item =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item
       ));
+
+      const updatedItems = items.map(item =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item
+      );
       
-      if (onUpdate) onUpdate();
+      if (updatedItems.every(item => item.completed)) {
+        await handleArchiveStack();
+      }
     } catch (error) {
-      console.error('Error toggling task:', error);
-      toast.error('Failed to update task');
+      console.error('Error toggling item:', error);
+      toast.error('Failed to update item');
     }
   };
 
   const handleArchiveStack = async () => {
-    if (!id) return;
-
     try {
       const { error } = await supabase
-        .from('stacks')
-        .update({ archived_at: new Date().toISOString() })
+        .from('todo_stacks')
+        .update({ 
+          archived: true,
+          completed_at: new Date().toISOString()
+        })
         .eq('id', id);
 
       if (error) throw error;
-      toast.success('Stack archived successfully');
-      if (onUpdate) onUpdate();
+
+      toast.success('Stack archived');
+      onUpdate();
     } catch (error) {
       console.error('Error archiving stack:', error);
       toast.error('Failed to archive stack');
     }
   };
 
-  if (loading) {
-    return (
-      <Card className="p-4">
-        <div className="flex items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
-      </Card>
-    );
-  }
+  const handleRestoreStack = async () => {
+    try {
+      const { error } = await supabase
+        .from('todo_stacks')
+        .update({ 
+          archived: false,
+          completed_at: null
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Stack restored');
+      onUpdate();
+    } catch (error) {
+      console.error('Error restoring stack:', error);
+      toast.error('Failed to restore stack');
+    }
+  };
+
+  const handleDeleteStack = async () => {
+    try {
+      const { error } = await supabase
+        .from('todo_stacks')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Stack deleted');
+      onUpdate();
+    } catch (error) {
+      console.error('Error deleting stack:', error);
+      toast.error('Failed to delete stack');
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-500';
+      case 'medium': return 'text-yellow-500';
+      case 'low': return 'text-blue-500';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const completedCount = items.filter(item => item.completed).length;
+  const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <Button variant="ghost" size="sm" onClick={handleArchiveStack}>
-          <Archive className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <div className="space-y-2">
-        {tasks.map((task) => (
-          <div key={task.id} className="flex items-center space-x-2">
-            <Checkbox
-              checked={task.completed}
-              onCheckedChange={() => handleToggleTask(task.id)}
-            />
-            <span className={task.completed ? 'line-through text-muted-foreground' : ''}>
-              {task.title}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex gap-2 mt-4">
-        <Input
-          placeholder="New task..."
-          value={newTaskTitle}
-          onChange={(e) => setNewTaskTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !addingTask && newTaskTitle.trim()) {
-              handleAddTask();
-            }
-          }}
-        />
-        <Button 
-          onClick={handleAddTask} 
-          disabled={addingTask || !newTaskTitle.trim()}
-        >
-          {addingTask ? (
+    <Card className="p-4 gradient-card hover:shadow-lg transition-all">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <p className="text-sm text-muted-foreground">
+            {completedCount} of {items.length} completed
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {archived ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Adding...
+              <Button variant="ghost" size="icon" onClick={handleRestoreStack}>
+                <Archive className="h-4 w-4 rotate-180" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleDeleteStack}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
             </>
           ) : (
-            <>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add
-            </>
+            <Button variant="ghost" size="icon" onClick={handleArchiveStack}>
+              <Archive className="h-4 w-4" />
+            </Button>
           )}
-        </Button>
+        </div>
+      </div>
+
+      <div className="h-1.5 w-full bg-primary/20 rounded-full mb-4">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-500"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <div className="space-y-4">
+        {!archived && (
+          <div className="space-y-2">
+            <Input
+              placeholder="New item..."
+              value={newItemText}
+              onChange={(e) => setNewItemText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddItem();
+              }}
+            />
+            <div className="flex gap-2">
+              <Select value={newItemCategory} onValueChange={setNewItemCategory}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category.toLowerCase()}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={newItemPriority} onValueChange={setNewItemPriority}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((priority) => (
+                    <SelectItem key={priority.value} value={priority.value}>
+                      <div className="flex items-center gap-2">
+                        <Flag className={`h-4 w-4 ${priority.color}`} />
+                        {priority.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleAddItem} size="icon" disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <PlusCircle className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-2 rounded-lg border p-2 bg-background/50 backdrop-blur-sm"
+            >
+              <Checkbox
+                checked={item.completed}
+                onCheckedChange={() => handleToggleItem(item.id)}
+                disabled={archived}
+              />
+              <div className="flex-1">
+                <span className={item.completed ? 'line-through opacity-50' : ''}>
+                  {item.text}
+                </span>
+                <div className="flex gap-2 mt-1">
+                  {item.category && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {item.category}
+                    </span>
+                  )}
+                  {item.priority && (
+                    <span className={`text-xs flex items-center gap-1 ${getPriorityColor(item.priority)}`}>
+                      <Flag className="h-3 w-3" />
+                      {item.priority}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </Card>
   );

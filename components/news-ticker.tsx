@@ -1,98 +1,107 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Newspaper } from 'lucide-react';
 
 interface NewsArticle {
+  id: string;
   title: string;
-  url: string;
+  description: string;
+  author: string;
   source: {
     name: string;
   };
+  publishedAt: string;
+  url: string;
 }
 
+const FALLBACK_NEWS = [{
+  id: '1',
+  title: 'Welcome to TaskFlow AI - Your Personal Task Management Solution',
+  description: 'Stay organized and productive with our advanced features',
+  author: 'TaskFlow Team',
+  source: { name: 'TaskFlow AI' },
+  publishedAt: new Date().toISOString(),
+  url: '#'
+}];
+
 export function NewsTicker() {
-  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>(FALLBACK_NEWS);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const response = await fetch('/api/news');
+        const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY;
+        if (!apiKey) return; // Silently use fallback news
+
+        const response = await fetch(
+          `https://newsapi.org/v2/top-headlines?country=us&category=technology&pageSize=10&apiKey=${apiKey}`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'TaskFlow AI/1.0'
+            }
+          }
+        );
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch news');
-        }
+        if (!response.ok) return; // Silently use fallback news
         
         const data = await response.json();
         
-        if (data.status === 'error') {
-          throw new Error(data.message || 'Failed to fetch news');
-        }
+        if (data.status === 'error' || !data.articles?.length) return; // Silently use fallback news
 
-        if (data.articles && Array.isArray(data.articles)) {
-          const formattedNews = data.articles
-            .filter((article: NewsArticle) => article.title && article.url)
-            .map((article: NewsArticle) => ({
-              title: article.title,
-              url: article.url,
-              source: article.source
-            }));
+        const formattedNews = data.articles
+          .filter((article: any) => article.title && article.url)
+          .map((article: any, index: number) => ({
+            id: index.toString(),
+            title: article.title,
+            description: article.description || '',
+            author: article.author || 'Unknown',
+            source: article.source || { name: 'Unknown' },
+            publishedAt: article.publishedAt,
+            url: article.url
+          }));
+
+        if (formattedNews.length > 0) {
           setNews(formattedNews);
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch news');
-        console.error('News error:', err);
+      } catch (error) {
+        console.error('Error fetching news:', error);
+        // Silently continue with fallback news
       }
     };
 
     fetchNews();
-  }, []); // Only run on mount
-
-  useEffect(() => {
-    if (news.length === 0) return;
 
     const interval = setInterval(() => {
-      setCurrentNewsIndex((prevIndex) => 
-        prevIndex === news.length - 1 ? 0 : prevIndex + 1
-      );
+      setCurrentNewsIndex((prev) => (prev + 1) % news.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [news.length]);
+  }, []);
 
-  if (error || news.length === 0) {
-    return null;
-  }
+  const currentNews = news[currentNewsIndex];
 
   return (
-    <div className="relative overflow-hidden h-6">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentNewsIndex}
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -20, opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="flex items-center space-x-2 text-sm text-muted-foreground"
-        >
-          <ChevronRight className="h-4 w-4" />
-          <a
-            href={news[currentNewsIndex].url}
+    <div className="relative overflow-hidden rounded-md news-ticker-bg">
+      <div className="flex items-center gap-2 px-4 py-2">
+        <Newspaper className="h-4 w-4 flex-shrink-0 text-primary" />
+        <ScrollArea className="w-full whitespace-nowrap">
+          <a 
+            href={currentNews.url}
             target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-foreground transition-colors"
+            rel="noopener noreferrer" 
+            className="text-sm hover:underline inline-flex items-center gap-2"
           >
-            {news[currentNewsIndex].title}
-            <span className="ml-2 text-xs opacity-70 text-muted-foreground text-primary">
-              - {news[currentNewsIndex].source.name}
+            <span className="font-medium">{currentNews.title}</span>
+            <span className="text-muted-foreground">
+              {currentNews.source.name}
             </span>
           </a>
-        </motion.div>
-      </AnimatePresence>
+        </ScrollArea>
+      </div>
     </div>
   );
 }

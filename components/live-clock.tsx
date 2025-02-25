@@ -2,17 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Home, Globe } from 'lucide-react';
+import { DateTime } from 'luxon';
 
 export function LiveClock() {
   const [mounted, setMounted] = useState(false);
-  const [time, setTime] = useState(new Date());
-  const [is24Hour, setIs24Hour] = useState(false);
+  const [time, setTime] = useState(DateTime.local());
+  const [selectedTimeZone, setSelectedTimeZone] = useState<string | null>(null);
+  const timeZones = Intl.supportedValuesOf('timeZone');
 
   useEffect(() => {
     setMounted(true);
     const timer = setInterval(() => {
-      setTime(new Date());
+      setTime(DateTime.local());
     }, 1000);
 
     return () => clearInterval(timer);
@@ -21,146 +31,82 @@ export function LiveClock() {
   if (!mounted) {
     return (
       <Card className="p-6">
-        <div className="h-[180px] flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            Loading...
-          </motion.div>
+        <div className="h-[160px] flex items-center justify-center">
+          <span>Loading...</span>
         </div>
       </Card>
     );
   }
 
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
-  const milliseconds = time.getMilliseconds();
-
-  // Calculate smooth angles for clock hands
-  const secondAngle = ((seconds + milliseconds / 1000) / 60) * 360;
-  const minuteAngle = ((minutes + seconds / 60) / 60) * 360;
-  const hourAngle = ((hours % 12 + minutes / 60) / 12) * 360;
-
-  const timeString = time.toLocaleString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: !is24Hour,
-  });
-
-  const dateString = time.toLocaleString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const timeToDisplay = selectedTimeZone
+    ? time.setZone(selectedTimeZone)
+    : time;
 
   return (
-    <Card className="p-6 transition-all hover:shadow-lg dark:hover:shadow-primary/10">
-      <div className="flex flex-col items-center space-y-4">
-        <div className="relative w-40 h-40">
-          {/* Clock face */}
-          <div className="absolute inset-0 rounded-full border-2 border-primary/20">
-            {/* Hour numbers */}
-            {[...Array(12)].map((_, i) => {
-              const angle = ((i + 1) * 30 * Math.PI) / 180;
-              const x = Math.sin(angle) * 52;
-              const y = -Math.cos(angle) * 52;
-              return (
-                <div
-                  key={i}
-                  className="absolute text-sm font-medium text-primary/80"
-                  style={{
-                    transform: `translate(-50%, -50%)`,
-                    left: `calc(50% + ${x}px)`,
-                    top: `calc(50% + ${y}px)`,
-                  }}
-                >
-                  {i + 1}
-                </div>
-              );
+    <Card className="p-6 transition-all hover:shadow-lg">
+      <div className="flex flex-col space-y-6">
+        {/* Date */}
+        <div className="text-center">
+          <h3 className="text-xl font-medium">
+            {timeToDisplay.toLocaleString({
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
             })}
-
-            {/* Hour markers */}
-            {[...Array(12)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-1 h-3 bg-primary/60"
-                style={{
-                  transform: `rotate(${i * 30}deg) translateY(2px)`,
-                  transformOrigin: '50% 100%',
-                  left: '50%',
-                  top: '0',
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Hour hand */}
-          <motion.div
-            className="absolute w-1.5 h-16 bg-primary rounded-full"
-            style={{
-              transformOrigin: 'bottom center',
-              left: 'calc(50% - 0.75px)',
-              bottom: '50%',
-            }}
-            animate={{ rotate: hourAngle }}
-            transition={{ type: 'spring', stiffness: 200, damping: 30 }}
-          />
-
-          {/* Minute hand */}
-          <motion.div
-            className="absolute w-1 h-20 bg-primary/80 rounded-full"
-            style={{
-              transformOrigin: 'bottom center',
-              left: 'calc(50% - 0.5px)',
-              bottom: '50%',
-            }}
-            animate={{ rotate: minuteAngle }}
-            transition={{ type: 'spring', stiffness: 200, damping: 30 }}
-          />
-
-          {/* Second hand */}
-          <motion.div
-            className="absolute w-0.5 h-20 bg-red-500 rounded-full"
-            style={{
-              transformOrigin: 'bottom center',
-              left: 'calc(50% - 0.25px)',
-              bottom: '50%',
-            }}
-            animate={{ rotate: secondAngle }}
-            transition={{ type: 'tween', duration: 0.1, ease: 'linear' }}
-          />
-
-          {/* Center dot */}
-          <div className="absolute w-3 h-3 bg-primary rounded-full" style={{ left: 'calc(50% - 6px)', top: 'calc(50% - 6px)' }} />
+          </h3>
         </div>
 
-        <div className="text-center space-y-2">
-          <motion.h2
-            className="text-xl font-bold tabular-nums"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+        {/* Timezone Selection */}
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSelectedTimeZone(null)}
+            title="Local Time"
           >
-            {timeString}
-          </motion.h2>
-          <motion.p
-            className="text-sm text-muted-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            <Home className="h-4 w-4" />
+          </Button>
+          <Select
+            value={selectedTimeZone || ''}
+            onValueChange={setSelectedTimeZone}
           >
-            {dateString}
-          </motion.p>
-          <button
-            onClick={() => setIs24Hour(!is24Hour)}
-            className="text-xs text-muted-foreground hover:text-primary transition-colors"
-          >
-            Toggle 24h format
-          </button>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select timezone" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeZones.map((zone) => (
+                <SelectItem key={zone} value={zone}>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    <span className="truncate">{zone.replace(/_/g, ' ')}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clock */}
+        <div className="text-center">
+          <div className="font-mono">
+            <span className="text-4xl font-bold tabular-nums">
+              {timeToDisplay.toFormat('HH:mm:ss')}
+            </span>
+            <div className="text-sm text-muted-foreground mt-1">
+              {selectedTimeZone ? timeToDisplay.zoneName : 'Local Time'}
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Info */}
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm text-muted-foreground">
+          <div>
+            UTC: {timeToDisplay.toUTC().toFormat('HH:mm:ss')}
+          </div>
+          <div>
+            Offset: {timeToDisplay.toFormat('ZZZZ')}
+          </div>
         </div>
       </div>
     </Card>

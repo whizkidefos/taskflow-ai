@@ -9,17 +9,15 @@ import { Card } from '@/components/ui/card';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-function Calendar({
-  className,
-  classNames,
-  showOutsideDays = true,
-  ...props
-}: CalendarProps) {
+const Calendar = ({ selectedDate, onSelect, className, classNames, showOutsideDays = true, ...props }: CalendarProps) => {
   return (
     <Card className="p-4 w-full">
       <DayPicker
+        mode="single"
+        selected={selectedDate}
+        onSelect={onSelect}
         showOutsideDays={showOutsideDays}
-        className={cn('p-3 w-full', className)}
+        className={cn('p-3', className)}
         classNames={{
           months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full',
           month: 'space-y-4 w-full',
@@ -36,14 +34,14 @@ function Calendar({
           head_row: 'flex w-full justify-between',
           head_cell: 'text-muted-foreground rounded-md w-8 font-normal text-[0.8rem] text-center',
           row: 'flex w-full justify-between mt-2',
-          cell: 'relative w-8 h-8 text-center text-sm p-0 focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent',
+          cell: 'relative w-8 h-8 text-center text-sm p-0 focus-within:relative focus-within:z-20',
           day: cn(
             buttonVariants({ variant: 'ghost' }),
             'h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground'
           ),
           day_range_end: 'day-range-end',
           day_selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
-          day_today: 'bg-accent text-accent-foreground',
+          day_today: 'bg-primary/10 text-primary font-semibold',
           day_outside: 'text-muted-foreground opacity-50',
           day_disabled: 'text-muted-foreground opacity-50',
           day_range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
@@ -51,8 +49,8 @@ function Calendar({
           ...classNames,
         }}
         components={{
-          IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-          IconRight: () => <ChevronRight className="h-4 w-4" />,
+          IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+          IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
         }}
         modifiersStyles={{
           today: {
@@ -70,7 +68,8 @@ function Calendar({
       />
     </Card>
   );
-}
+};
+
 Calendar.displayName = 'Calendar';
 
 export { Calendar };

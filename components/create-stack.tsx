@@ -1,13 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Loader2 } from 'lucide-react';
 import { createStack } from '@/lib/db';
-import { toast } from 'sonner';
-import { useUser } from '@/lib/hooks/use-user';
+import { useToast } from '@/components/ui/use-toast';
+import { Plus } from 'lucide-react';
 
 interface CreateStackProps {
   onStackCreated: () => void;
@@ -15,56 +14,58 @@ interface CreateStackProps {
 
 export function CreateStack({ onStackCreated }: CreateStackProps) {
   const [title, setTitle] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { user } = useUser();
+  const [isCreating, setIsCreating] = useState(false);
+  const { toast } = useToast();
+  const supabase = createClientComponentClient();
 
-  const handleCreateStack = async () => {
-    if (!title.trim() || !user) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
 
-    setLoading(true);
     try {
+      setIsCreating(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to create a stack',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       await createStack(user.id, title.trim());
       setTitle('');
-      toast.success('Stack created successfully');
       onStackCreated();
-    } catch (error: any) {
+      toast({
+        title: 'Success',
+        description: 'Stack created successfully',
+      });
+    } catch (error) {
       console.error('Error creating stack:', error);
-      toast.error(error.message || 'Failed to create stack');
+      toast({
+        title: 'Error',
+        description: 'Failed to create stack. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setLoading(false);
+      setIsCreating(false);
     }
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex gap-2">
-        <Input
-          placeholder="New stack name..."
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !loading && title.trim()) {
-              handleCreateStack();
-            }
-          }}
-        />
-        <Button 
-          onClick={handleCreateStack} 
-          disabled={loading || !title.trim()}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Creating...
-            </>
-          ) : (
-            <>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Create Stack
-            </>
-          )}
-        </Button>
-      </div>
-    </Card>
+    <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+      <Input
+        placeholder="Create a new stack..."
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        disabled={isCreating}
+        className="flex-1"
+      />
+      <Button type="submit" disabled={isCreating || !title.trim()}>
+        <Plus className="w-4 h-4 mr-2" />
+        Create Stack
+      </Button>
+    </form>
   );
 }

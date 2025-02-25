@@ -39,7 +39,7 @@ interface UpcomingEventsProps {
 }
 
 export function UpcomingEvents({ initialEvents = [] }: UpcomingEventsProps) {
-  const [events, setEvents] = useState<Event[]>(initialEvents);
+  const [events, setEvents] = useState<Event[]>([]);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [newEvent, setNewEvent] = useState<Omit<Event, 'id'>>({
     title: '',
@@ -51,8 +51,17 @@ export function UpcomingEvents({ initialEvents = [] }: UpcomingEventsProps) {
   const { user } = useUser();
 
   useEffect(() => {
-    setEvents(initialEvents);
-  }, [initialEvents]);
+    async function loadEvents() {
+      try {
+        const data = await getEvents();
+        setEvents(data);
+      } catch (error) {
+        console.error('Error loading events:', error);
+      }
+    }
+
+    loadEvents();
+  }, []); // Only run on mount
 
   const currentDate = new Date();
   const upcomingEvents = events.filter((event) => new Date(event.date) >= currentDate);

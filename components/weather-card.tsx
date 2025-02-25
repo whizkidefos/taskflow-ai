@@ -2,72 +2,52 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Cloud, CloudRain, Sun, Loader2 } from 'lucide-react';
+import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning, Wind, Loader2, CloudDrizzle, CloudFog } from 'lucide-react';
 
 interface WeatherData {
-  main: {
-    temp: number;
-    humidity: number;
-  };
-  weather: Array<{
-    main: string;
-    description: string;
-  }>;
-  name: string;
+  temp: number;
+  feels_like: number;
+  condition: string;
+  location: string;
+  humidity: number;
+  wind_speed: number;
 }
 
 export function WeatherCard() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const getWeather = async () => {
       try {
         // Get user's location
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error('Geolocation not supported'));
-            return;
-          }
-          
-          navigator.geolocation.getCurrentPosition(
-            resolve,
-            reject,
-            {
-              timeout: 10000,
-              enableHighAccuracy: false,
-              maximumAge: 300000 // 5 minutes
-            }
-          );
+          navigator.geolocation.getCurrentPosition(resolve, reject);
         });
 
         const { latitude, longitude } = position.coords;
-        
-        // Fetch weather data
+
+        // Fetch weather data from OpenWeatherMap API
         const response = await fetch(
-          `/api/weather?lat=${latitude}&lon=${longitude}`
+          `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`
         );
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Weather service unavailable');
-        }
+        if (!response.ok) throw new Error('Weather data not available');
 
         const data = await response.json();
-        setWeather(data);
-        setError(null);
-      } catch (err: any) {
-        console.error('Weather error:', err);
-        if (err.code === 1) {
-          setError('Location access denied');
-        } else if (err.code === 2) {
-          setError('Location unavailable');
-        } else if (err.code === 3) {
-          setError('Location timeout');
-        } else {
-          setError(err.message || 'Weather unavailable');
-        }
+
+        setWeather({
+          temp: Math.round(data.main.temp),
+          feels_like: Math.round(data.main.feels_like),
+          condition: data.weather[0].main,
+          location: data.name,
+          humidity: data.main.humidity,
+          wind_speed: Math.round(data.wind.speed * 3.6) // Convert m/s to km/h
+        });
+      } catch (err) {
+        setError('Could not fetch weather data');
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -76,12 +56,31 @@ export function WeatherCard() {
     getWeather();
   }, []);
 
+  const getWeatherIcon = (condition: string) => {
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        return <Sun className="h-12 w-12 text-yellow-500" />;
+      case 'rain':
+        return <CloudRain className="h-12 w-12 text-blue-500" />;
+      case 'drizzle':
+        return <CloudDrizzle className="h-12 w-12 text-blue-400" />;
+      case 'snow':
+        return <CloudSnow className="h-12 w-12 text-blue-200" />;
+      case 'thunderstorm':
+        return <CloudLightning className="h-12 w-12 text-yellow-600" />;
+      case 'mist':
+      case 'fog':
+        return <CloudFog className="h-12 w-12 text-gray-400" />;
+      default:
+        return <Cloud className="h-12 w-12 text-gray-500" />;
+    }
+  };
+
   if (loading) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">Loading weather...</span>
+      <Card className="p-6">
+        <div className="flex items-center justify-center h-[120px]">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </Card>
     );
@@ -89,44 +88,46 @@ export function WeatherCard() {
 
   if (error) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Cloud className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {error}
-            </span>
-          </div>
+      <Card className="p-6">
+        <div className="text-center text-destructive">
+          <p className="font-medium">{error}</p>
+          <p className="text-sm mt-1">Please enable location services and try again</p>
         </div>
       </Card>
     );
   }
 
-  if (!weather) {
-    return null;
-  }
-
-  const WeatherIcon = weather.weather[0].main.toLowerCase().includes('rain')
-    ? CloudRain
-    : weather.weather[0].main.toLowerCase().includes('cloud')
-    ? Cloud
-    : Sun;
-
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <WeatherIcon className="h-5 w-5" />
-          <span className="font-medium">
-            {Math.round(weather.main.temp)}°C
+    <Card className="p-6 transition-all hover:shadow-lg">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-lg font-medium text-muted-foreground mb-1">
+            {weather?.location}
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-4xl font-bold">{weather?.temp}°C</span>
+            <div className="text-sm text-muted-foreground">
+              <p>Feels like {weather?.feels_like}°C</p>
+              <p>{weather?.condition}</p>
+            </div>
+          </div>
+        </div>
+        {weather && getWeatherIcon(weather.condition)}
+      </div>
+      
+      <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t">
+        <div className="flex items-center gap-2">
+          <Wind className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            {weather?.wind_speed} km/h
           </span>
         </div>
-        <span className="text-sm text-muted-foreground">
-          {weather.name}
-        </span>
-      </div>
-      <div className="mt-2 text-sm text-muted-foreground">
-        {weather.weather[0].description}
+        <div className="flex items-center gap-2">
+          <CloudRain className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            {weather?.humidity}%
+          </span>
+        </div>
       </div>
     </Card>
   );
