@@ -79,14 +79,14 @@ export function InsightsPanel() {
 
   // Common axis props to replace defaultProps
   const commonAxisProps = {
-    scale: 'auto',
+    scale: 'auto' as const,
     allowDecimals: true,
     allowDataOverflow: false,
     allowDuplicatedCategory: true,
     hide: false,
     mirror: false,
-    orientation: 'bottom',
-    padding: { left: 0, right: 0 },
+    orientation: 'bottom' as 'bottom' | 'top',
+    padding: { top: 0, bottom: 0, left: 0, right: 0 },
     reversed: false,
     ...axisStyle
   };

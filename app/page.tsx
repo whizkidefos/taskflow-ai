@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { User } from '@supabase/supabase-js';
 import { CalendarView } from '@/components/calendar-view';
+import { NewsTicker } from '@/components/news-ticker';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -233,6 +234,7 @@ export default function Home() {
                 <path d="M288 416C341.019 416 384 373.019 384 320C384 266.981 341.019 224 288 224C234.981 224 192 266.981 192 320C192 373.019 234.981 416 288 416Z" className="fill-background"/>
               </svg>
               <h1 className="text-2xl font-bold">TaskFlow AI</h1>
+              <NewsTicker />
             </div>
             <ThemeToggle />
           </div>

@@ -132,7 +132,7 @@ export function TaskMetadata({
                 <Calendar
                   mode="single"
                   selected={localDueDate || undefined}
-                  onSelect={setLocalDueDate}
+                  onSelect={(day) => setLocalDueDate(day ?? null)}
                   initialFocus
                 />
               </PopoverContent>
